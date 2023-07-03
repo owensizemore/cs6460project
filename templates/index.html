@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <head>
   <title>CS6460 Project</title>
   <link
@@ -18,4 +18,150 @@
   {% if result %}
   <div class="result">{{ result }}</div>
   {% endif %}
+</body> -->
+
+<!DOCTYPE html>
+<head>
+    <title>CS6460 Project</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://kit.fontawesome.com/78e1b96a9f.js" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+      $(document).ready(function() {
+        $('#dictate').click(function() {
+          var text = $('p#text-to-dictate').text();
+          $.ajax({
+            url: '/dictate',
+            type: 'POST',
+            data: {text: text},
+            success: function(response) {
+              console.log(response);
+              var audio = new Audio(response.audio_url);
+              audio.play();
+            },
+            error: function(error) {
+              console.log(error);
+            }
+          })
+        })
+      })
+      $(document).ready(function() {
+        $('#dictate-2').click(function() {
+          var text = $('p#text-to-dictate-2').text();
+          $.ajax({
+            url: '/dictate',
+            type: 'POST',
+            data: {text: text},
+            success: function(response) {
+              console.log(response);
+              var audio = new Audio(response.audio_url);
+              audio.play();
+            },
+            error: function(error) {
+              console.log(error);
+            }
+          })
+        })
+      })
+    </script>
+</head>
+<body>
+    <div class="container has-text-centered">
+        <div class="box my-6">
+            <div class="content">
+                <h1 class="title is-3">CS6460 Project: Foreign Language Conversation Chatbot</h1>
+                <h1 class="title is-6">Created by Owen Sizemore</h1>
+                {% if not language %}
+                <p>Choose a conversation language to get started:</p>
+                <form method="POST" action="/">
+                  <div class="field has-addons has-addons-centered">
+                    <div class="control">
+                        <input class="input" type="text" name="language" placeholder="English"/>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" type="submit">Go</button>
+                    </div>
+                  </div>
+                </form>
+                {% endif %}
+                {% if language %}
+                <p>Your selected language is: <strong>{{ language }}</strong></p>
+                {% if not level %}
+                <p>Select your language proficiency level:</p>
+                <form method="POST" action="/">
+                  <button class="button is-info is-outlined" type="submit" name="level" value="A1 (Beginner)">A1 (Beginner)</button>
+                  <button class="button is-info is-outlined" type="submit" name="level" value="A2 (Elementary)">A2 (Elementary)</button>
+                  <button class="button is-info is-outlined" type="submit" name="level" value="B1 (Intermediate)">B1 (Intermediate)</button>
+                  <button class="button is-info is-outlined" type="submit" name="level" value="B2 (Upper Intermediate)">B2 (Upper Intermediate)</button>
+                  <button class="button is-info is-outlined" type="submit" name="level" value="C1 (Advanced)">C1 (Advanced)</button>
+                  <button class="button is-info is-outlined" type="submit" name="level" value="C2 (Proficient)">C2 (Proficient)</button>
+                </form>
+                {% endif %}
+                {% endif %}
+                {% if level %}
+                <p>Your selected proficiency level is: <strong>{{ level }}</strong></p>
+                {% endif %}
+                {% if language and level %}
+                <form class="mt-3 mb-6" method="POST" action="/">
+                  <button class="button is-info" type="submit" name="new_session">Create New Session</button>
+                </form>
+                {% if initial_prompt %}
+                <div class="box">
+                  <div class="columns is-vcentered">
+                    <div class="column is-one-quarter">
+                      <figure class="image is-48x48">
+                        <img src="{{ url_for('static', filename='tutor.png') }}">
+                      </figure>
+                    </div>
+                    <div class="column is-half has-text-centered">
+                      <p id="text-to-dictate">{{ initial_prompt }}</p>
+                    </div>
+                    <div class="column is-one-quarter">
+                      <figure id="dictate" class="image is-48x48">
+                        <img src="{{ url_for('static', filename='speaker.png') }}">
+                      </figure>
+                    </div>
+                  </div>
+                </div>
+                {% if user_response and prompt_reply %}
+                <div class="box">
+                  {{ user_response }}
+                </div>
+                <div class="box">
+                  <div class="columns is-vcentered">
+                    <div class="column is-one-quarter">
+                      <figure class="image is-48x48">
+                        <img src="{{ url_for('static', filename='tutor.png') }}">
+                      </figure>
+                    </div>
+                    <div class="column is-half has-text-centered">
+                      <p id="text-to-dictate-2">{{ prompt_reply }}</p>
+                    </div>
+                    <div class="column is-one-quarter">
+                      <figure id="dictate-2" class="image is-48x48">
+                        <img src="{{ url_for('static', filename='speaker.png') }}">
+                      </figure>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+                <form method="POST" action="/">
+                  <div class="field is-grouped">
+                    <p class="control is-expanded">
+                      <input class="input" type="text" name="user_response" placeholder="Enter your response...">
+                    </p>
+                    <p class="control">
+                      <button class="button is-info" type="submit">
+                        <span class="icon is-small">
+                          <i class="fas fa-arrow-right"></i>
+                        </span>
+                      </button>
+                    </p>
+                  </div>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </body>
