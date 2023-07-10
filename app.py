@@ -85,7 +85,7 @@ def generate_audio(text):
     client = tts.TextToSpeechClient()
     synthesis_input = tts.SynthesisInput(text=text)
     voice = tts.VoiceSelectionParams(
-        language_code='es-US',
+        language_code=get_language_code(session["language"]),
         ssml_gender=tts.SsmlVoiceGender.FEMALE
     )
     audio_config = tts.AudioConfig(
@@ -102,6 +102,25 @@ def generate_audio(text):
         out_file.write(response.audio_content)
 
     return audio_file_path
+
+def get_language_code(language):
+    codes = {
+        'english': 'en-US',
+        'spanish': 'es-US',
+        'french': 'fr-FR',
+        'portuguese': 'pt-BR',
+        'german': 'de-DE',
+        'afrikaans': 'af-ZA',
+        'arabic': 'ar-XA',
+        'filipino': 'fil-PH',
+        'italian': 'it-IT',
+        'japanese': 'ja-JP',
+        'chinese': 'zh-CN',
+        'vietnamese': 'vi-VN',
+        'korean': 'ko-KR'
+    }
+    language = language.lower()
+    return codes[language]
 
 def create_initial_prompt(language, level):
     return f"""Pretend that you are a foreign language tutor that is fluent in {language}. 
