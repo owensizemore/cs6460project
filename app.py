@@ -3,20 +3,27 @@ import os
 import openai
 import google.cloud.texttospeech as tts
 from flask import Flask, redirect, render_template, jsonify, request, url_for, session
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = "your_secret_key"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "cs6460-project-391710-dcae76e5282f.json"
 
+prompts_and_responses = []
 
 @app.route("/", methods=("GET", "POST"))
 def index():
+    global prompts_and_responses
+    
     if request.method == "POST":
+        # Add user's specified langauge
         if "language" in request.form:
             language = request.form["language"]
             session["language"] = language
 
+        # Add user's specified language level
         elif "level" in request.form:
             level = request.form["level"]
             session["level"] = level
@@ -32,22 +39,7 @@ def index():
                 )
                 session["initial_prompt"] = response.choices[0].text
 
-        elif "user_response" in request.form:
-            user_response = request.form["user_response"]
-            prompt = create_user_response_prompt(
-                language=session["language"],
-                level=session["level"],
-                user_response=user_response
-            )
-            response = openai.Completion.create(
-                model="text-davinci-003",
-                prompt=prompt,
-                temperature=0.6,
-                max_tokens=1024
-            )
-            session["user_response"] = user_response
-            session["prompt_reply"] = response.choices[0].text
-
+        # Delete all session variables and start fresh
         elif "new_session" in request.form:
             if "language" in session:
                 session.pop("language")
@@ -55,24 +47,36 @@ def index():
                 session.pop("level")
             if "initial_prompt" in session:
                 session.pop("initial_prompt")
-            if "user_response" in session:
-                session.pop("user_response")
-            if "prompt_reply" in session:
-                session.pop("prompt_reply")
+            prompts_and_responses = []
 
+        # Gather input from user (text only right now)
+        elif "user_input" in request.form:
+            input = request.form.get("user_text_input")
+            prompt = create_user_response_prompt(
+                language=session["language"],
+                level=session["level"],
+                user_response=input
+            )
+            response = openai.Completion.create(
+                model="text-davinci-003",
+                prompt=prompt,
+                temperature=0.6,
+                max_tokens=1024
+            ).choices[0].text
+            prompts_and_responses.append((input, response))
+
+    # Retrieve existing session variables if they were not created anew
     language = session.get("language")
     level = session.get("level")
     initial_prompt = session.get("initial_prompt")
-    user_response = session.get("user_response")
-    prompt_reply = session.get("prompt_reply")
 
+    # Render template with all variables
     return render_template(
         "index.html", 
         language=language,
         level=level,
         initial_prompt=initial_prompt,
-        user_response=user_response,
-        prompt_reply=prompt_reply
+        prompts_and_responses=prompts_and_responses
     )
 
 @app.route('/dictate', methods=["POST"])
@@ -134,4 +138,4 @@ def create_user_response_prompt(language, level, user_response):
     
     {user_response}
     
-    Construct an appropriate response to this message at the level of {level}."""
+    Construct an appropriate response to this message at the level of {level} that will keep the conversation going, asking follow-up questions as necessary."""
