@@ -1,69 +1,12 @@
-<!-- <!DOCTYPE html>
-<head>
-  <title>CS6460 Project</title>
-  <link
-    rel="shortcut icon"
-    href="{{ url_for('static', filename='chat.png') }}"
-  />
-  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}" />
-</head>
-
-<body>
-  <img src="{{ url_for('static', filename='chat.png') }}" class="icon" />
-  <h3>Foreign Language Conversation Chatbot</h3>
-  <form action="/" method="post">
-    <input type="text" name="prompt" placeholder="Enter Prompt" required />
-    <input type="submit" value="Submit" />
-  </form>
-  {% if result %}
-  <div class="result">{{ result }}</div>
-  {% endif %}
-</body> -->
-
 <!DOCTYPE html>
 <head>
     <title>CS6460 Project</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <script src="https://kit.fontawesome.com/78e1b96a9f.js" crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script>
-      $(document).ready(function() {
-        $('#dictate').click(function() {
-          var text = $('p#text-to-dictate').text();
-          $.ajax({
-            url: '/dictate',
-            type: 'POST',
-            data: {text: text},
-            success: function(response) {
-              console.log(response);
-              var audio = new Audio(response.audio_url);
-              audio.play();
-            },
-            error: function(error) {
-              console.log(error);
-            }
-          })
-        })
-      })
-      $(document).ready(function() {
-        $('#dictate-2').click(function() {
-          var text = $('p#text-to-dictate-2').text();
-          $.ajax({
-            url: '/dictate',
-            type: 'POST',
-            data: {text: text},
-            success: function(response) {
-              console.log(response);
-              var audio = new Audio(response.audio_url);
-              audio.play();
-            },
-            error: function(error) {
-              console.log(error);
-            }
-          })
-        })
-      })
-    </script>
+    <script src="https://astica.ai/javascript-sdk/2023-04-10/astica.api.js"></script>
+    <script src="{{ url_for('static', filename='user_recording.js') }}"></script>
+    <script src="{{ url_for('static', filename='utils.js') }}"></script>
 </head>
 <body>
     <div class="container has-text-centered">
@@ -114,10 +57,10 @@
                       </figure>
                     </div>
                     <div class="column is-half has-text-centered">
-                      <p id="text-to-dictate">{{ initial_prompt }}</p>
+                      <p class="text-to-dictate" data-prompt="{{ initial_prompt }}">{{ initial_prompt }}</p>
                     </div>
                     <div class="column is-one-quarter">
-                      <figure id="dictate" class="image is-48x48">
+                      <figure class="dictate image is-48x48">
                         <img src="{{ url_for('static', filename='speaker.png') }}">
                       </figure>
                     </div>
@@ -135,17 +78,17 @@
                       </figure>
                     </div>
                     <div class="column is-half has-text-centered">
-                      <p id="text-to-dictate-2">{{ prompt_reply }}</p>
+                      <p class="text-to-dictate" data-prompt="{{ prompt_reply }}">{{ prompt_reply }}</p>
                     </div>
                     <div class="column is-one-quarter">
-                      <figure id="dictate-2" class="image is-48x48">
+                      <figure class="dictate image is-48x48">
                         <img src="{{ url_for('static', filename='speaker.png') }}">
                       </figure>
                     </div>
                   </div>
                 </div>
                 {% endif %}
-                <form method="POST" action="/">
+                <form id="userInputForm" enctype="multipart/form-data" method="POST" action="/">
                   <div class="field is-grouped">
                     <p class="control is-expanded">
                       <input class="input" type="text" name="user_response" placeholder="Enter your response...">
@@ -157,8 +100,21 @@
                         </span>
                       </button>
                     </p>
+                    <p class="control">
+                      <button class="button is-info" type="submit">
+                        <span class="icon is-small">
+                          <i class="fas fa-microphone"></i>
+                        </span>
+                      </button>
+                    </p>
+                    <input type="hidden" id="audioData" name="audio_data">
                   </div>
                 </form>
+                <button id="recordButton" class="button is-info" onclick="toggleRecording()">
+                  <span id="recordIcon" class="icon is-small">
+                    <i class="fas fa-microphone"></i>
+                  </span>
+                </button>
                 {% endif %}
                 {% endif %}
             </div>
