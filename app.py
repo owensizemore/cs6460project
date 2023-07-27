@@ -1,6 +1,7 @@
 import os
 
 import openai
+import io
 import google.cloud.texttospeech as tts
 from flask import Flask, redirect, render_template, jsonify, request, url_for, session
 from flask_cors import CORS
@@ -11,11 +12,14 @@ app.secret_key = "your_secret_key"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "cs6460-project-391710-dcae76e5282f.json"
 
+astica_key = os.getenv("ASTICA_KEY")
 prompts_and_responses = []
+accents = []
 
 @app.route("/", methods=("GET", "POST"))
 def index():
     global prompts_and_responses
+    global accents
     
     if request.method == "POST":
         # Add user's specified langauge
@@ -48,6 +52,7 @@ def index():
             if "initial_prompt" in session:
                 session.pop("initial_prompt")
             prompts_and_responses = []
+            accents = []
 
         # Gather input from user (text only right now)
         elif "user_input" in request.form:
@@ -70,20 +75,118 @@ def index():
     level = session.get("level")
     initial_prompt = session.get("initial_prompt")
 
+    # Get language accents (if applicable)
+    accents = get_language_accents(language)
+
     # Render template with all variables
     return render_template(
         "index.html", 
         language=language,
         level=level,
         initial_prompt=initial_prompt,
-        prompts_and_responses=prompts_and_responses
+        prompts_and_responses=prompts_and_responses,
+        accents=accents
     )
+
+@app.route('/process-text', methods=["POST"])
+def process_text():
+    text = request.form.get("text")
+    prompt = create_user_response_prompt(
+        language=session["language"],
+        level=session["level"],
+        user_response=text
+    )
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=prompt,
+        temperature=0.6,
+        max_tokens=1024
+    ).choices[0].text
+    prompts_and_responses.append((text, response))
+
+    # Retrieve existing session variables if they were not created anew
+    language = session.get("language")
+    level = session.get("level")
+    initial_prompt = session.get("initial_prompt")
+
+    # Render template with all variables
+    return render_template(
+        "index.html", 
+        language=language,
+        level=level,
+        initial_prompt=initial_prompt,
+        prompts_and_responses=prompts_and_responses,
+        accents=accents
+    )
+
+@app.route('/process-audio', methods=["POST"])
+def process_audio():
+    try:
+        audio_file = request.files["audio"]
+
+        # Get the original filename and file extension
+        original_filename = audio_file.filename
+        file_extension = os.path.splitext(original_filename)[1]
+        
+        # Save the uploaded audio file locally with the original filename and extension
+        save_filename = "uploaded_audio" + file_extension
+        audio_file.save(save_filename)
+
+        # Perform audio transcription using OpenAI's Whisper library
+        with open(save_filename, "rb") as audio_file:
+            user_audio_prompt = openai.Audio.transcribe("whisper-1", audio_file)
+
+        prompt_transcription = user_audio_prompt['text']
+
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt_transcription,
+            temperature=0.6,
+            max_tokens=1024
+        ).choices[0].text
+        prompts_and_responses.append((prompt_transcription, response))
+
+        # Retrieve existing session variables if they were not created anew
+        language = session.get("language")
+        level = session.get("level")
+        initial_prompt = session.get("initial_prompt")
+
+        # Render template with all variables
+        return render_template(
+            "index.html", 
+            language=language,
+            level=level,
+            initial_prompt=initial_prompt,
+            prompts_and_responses=prompts_and_responses,
+            accents=accents
+        )
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/dictate', methods=["POST"])
 def dictate():
     text = request.form.get("text")
     audio_file = generate_audio(text)
     return jsonify({'audio_url': audio_file})
+
+@app.route('/process_image', methods=["POST"])
+def process_image():
+    global prompts_and_responses
+
+    image_file = request.files['image']
+    # image_file.save("uploaded_image.jpg")
+
+    prompts_and_responses.append((image_file, "That's a cool image!")) # TODO currently unable to display actual image in HTML
+
+    # Rerendering
+    return render_template(
+        "index.html", 
+        language=session.get("language"),
+        level=session.get("level"),
+        initial_prompt=session.get("initial_prompt"),
+        prompts_and_responses=prompts_and_responses
+    )
 
 def generate_audio(text):
     client = tts.TextToSpeechClient()
@@ -125,6 +228,17 @@ def get_language_code(language):
     }
     language = language.lower()
     return codes[language]
+
+def get_language_accents(language):
+    accent_mapping = {
+        "spanish": ['á', 'é', 'í', 'ñ', 'ó'],
+        "french": ['à', 'â', 'é', 'è', 'ê', 'î', 'ô', 'ù', 'û'],
+        "portuguese": ['á', 'â', 'ã', 'à', 'é', 'ê', 'í', 'ó', 'ô', 'õ', 'ú']
+    }
+    if language is not None:
+        language = language.lower()
+        return accent_mapping.get(language, [])
+    return []
 
 def create_initial_prompt(language, level):
     return f"""Pretend that you are a foreign language tutor that is fluent in {language}. 

@@ -2,11 +2,33 @@
 <head>
     <title>CS6460 Project</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://kit.fontawesome.com/78e1b96a9f.js" crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://astica.ai/javascript-sdk/2023-04-10/astica.api.js"></script>
-    <script src="{{ url_for('static', filename='user_recording.js') }}"></script>
     <script src="{{ url_for('static', filename='utils.js') }}"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('process-image').addEventListener('click', function() {
+          var fileInput = document.getElementById('image-input');
+          var file = fileInput.files[0];
+          
+          var formData = new FormData();
+          formData.append('image', file);
+          
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', '/process_image', true);
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+              // Handle the response from Flask
+              console.log(xhr.responseText);
+            }
+          };
+          
+          xhr.send(formData);
+        });
+      });
+    </script>
 </head>
 <body>
     <div class="container has-text-centered">
@@ -90,37 +112,143 @@
                 </div>
                 {% endfor %}
 
-                <form id="user-input-form" method="POST" action="/">
-                  <div class="field is-grouped">
-                    <p class="control is-expanded">
-                      <input class="input" type="text" name="user_text_input" placeholder="Enter your response...">
-                    </p>
-                    <p class="control">
-                      <button class="button is-info" name="user_input" type="submit">
-                        <span class="icon is-small">
-                          <i class="fas fa-arrow-right"></i>
-                        </span>
-                      </button>
-                    </p>
-                    <p class="control">
-                      <button class="button is-info" type="submit">
-                        <span class="icon is-small">
-                          <i class="fas fa-microphone"></i>
-                        </span>
-                      </button>
-                    </p>
+                <div class="buttons">
+                  <button id="text-button" class="button is-info is-outlined">
+                    <span class="icon is-small">
+                      <i class="fas fa-comment-dots"></i>
+                    </span>
+                    <span>Enter Text</span>
+                  </button>
+                  <button id="audio-button" class="button is-info is-outlined">
+                    <span class="icon is-small">
+                      <i class="fas fa-microphone"></i>
+                    </span>
+                    <span>Record Audio</span>
+                  </button>
+                  <button id="image-button" class="button is-info is-outlined">
+                    <span class="icon is-small">
+                      <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload Image</span>
+                  </button>
+                </div>
+
+                <div id="text-div" class="box animated-box" style="display: none">
+                  <div class="buttons are-small">
+                    {% for accent in accents %}
+                      <button class="button is-info is-outlined" onclick="appendAccent('{{ accent }}')">{{ accent }}</button>
+                    {% endfor %}
                   </div>
-                </form>
-          
-                <!-- <button id="recordButton" class="button is-info" onclick="toggleRecording()">
-                  <span id="recordIcon" class="icon is-small">
-                    <i class="fas fa-microphone"></i>
-                  </span>
-                </button> -->
+                  <form id="text-form" method="POST" action="/process-text">
+                    <div class="field is-grouped">
+                      <p class="control is-expanded">
+                        <input id="text-input" class="input is-info" type="text" name="text" placeholder="Enter your response...">
+                      </p>
+                      <p class="control">
+                        <button class="button is-info" type="submit">
+                            Submit
+                        </button>
+                      </p>
+                    </div>
+                  </form>
+                </div>
+
+                <div id="audio-div" class="box animated-box" style="display: none">
+                  <p>Record audio from your browser, then download the recording</p>
+                  <div class="buttons is-centered">
+                    <button id="recordButton" class="button is-info" onclick="toggleRecording()">
+                      <span id="recordIcon" class="icon is-small">
+                        <i class="fas fa-microphone"></i>
+                      </span>
+                      <span id="recordButtonText">Click to start recording</span> <!--- Recording... 00:00 -->
+                    </button>
+                    <button id="recordSubmitButton" class="button is-info is-outlined" disabled>
+                      <span>Download</span>
+                      <span class="icon">
+                        <i class="fas fa-download"></i>
+                      </span>
+                    </button>
+                  </div>
+                  <p class="mt-5">Upload Audio Here</p>
+                  <p>Supported audio formats: m4a, mp3, webm, mp4, mpga, wav, mpeg, ogg, oga, flac</p>
+                  <div class="columns">
+                    <div class="column is-3"></div>
+                    <div class="column is-6">
+                      <form id="audio-form" method="POST" action="/process-audio" enctype="multipart/form-data">
+                        <div class="file has-name is-boxed is-fullwidth is-centered">
+                          <label class="file-label">
+                            <input class="file-input" type="file" name="audio" id="audio-input">
+                            <span class="file-cta">
+                              <span class="file-icon">
+                                <i class="fas fa-upload"></i>
+                              </span>
+                              <span class="file-label">
+                                Choose a file…
+                              </span>
+                            </span>
+                            <span class="file-name">
+                              No file uploaded
+                            </span>
+                          </label>
+                        </div>
+                        <button id="uploadSubmitButton" class="button is-info is-outlined is-centered is-fullwidth mt-3" disabled>Submit</button>
+                      </form>
+                    </div>
+                    <div class="column is-3"></div>
+                  </div>
+                </div>
+
+                <div id="image-div" class="box animated-box" style="display: none">
+                  <p>Placeholder image</p>
+                </div>
+                
+                <div class="buttons">
+                  <div class="file">
+                    <label class="file-label">
+                      <input class="file-input" type="file" name="image" id="image-input">
+                      <span class="file-cta">
+                        <span class="file-icon">
+                          <i class="fas fa-upload"></i>
+                        </span>
+                        <span class="file-label">
+                          Upload Image
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  <button id="process-image" class="button is-primary">Submit Image</button>
+                  <button class="button" onclick="startAstica()">Astica API demo</button>
+                </div>
 
                 {% endif %} <!-- endif initial_prompt -->
                 {% endif %} <!-- endif language and level -->
             </div>
         </div>
     </div>
+    <script>
+      function appendAccent(accent) {
+            const inputBox = document.getElementById('text-input');
+            inputBox.value += accent;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='user_recording.js') }}"></script>
+    <script>
+      // Once audio is uploaded, enable the submit button and show file name in upload box
+      document.addEventListener("DOMContentLoaded", () => {
+        const audioInput = document.getElementById("audio-input");
+        const submitButton = document.getElementById("uploadSubmitButton");
+        const fileNameSpan = document.querySelector(".file-name");
+
+        audioInput.addEventListener("change", () => {
+          if (audioInput.files.length > 0) {
+            submitButton.disabled = false;
+            const fileName = audioInput.files[0].name;
+            fileNameSpan.textContent = fileName;
+          } else {
+            submitButton.disabled = true;
+            fileNameSpan.textContent = "No file uploaded";
+          }
+        });
+      });
+    </script>
 </body>
