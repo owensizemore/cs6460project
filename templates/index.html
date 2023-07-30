@@ -1,41 +1,36 @@
 <!DOCTYPE html>
 <head>
     <title>CS6460 Project</title>
+    <link rel="icon" href="{{ url_for('static', filename='chat.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://kit.fontawesome.com/78e1b96a9f.js" crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://astica.ai/javascript-sdk/2023-04-10/astica.api.js"></script>
     <script src="{{ url_for('static', filename='utils.js') }}"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('process-image').addEventListener('click', function() {
-          var fileInput = document.getElementById('image-input');
-          var file = fileInput.files[0];
-          
-          var formData = new FormData();
-          formData.append('image', file);
-          
-          var xhr = new XMLHttpRequest();
-          xhr.open('POST', '/process_image', true);
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-              // Handle the response from Flask
-              console.log(xhr.responseText);
-            }
-          };
-          
-          xhr.send(formData);
-        });
-      });
-    </script>
+    <style>
+      .spacer-box {
+        height: 3rem;
+      }
+      html {
+        background-color: #3e8ed0;
+      }
+    </style>
 </head>
 <body>
-    <div class="container has-text-centered">
-        <div class="box my-6">
+  <div class="background"></div>
+  <div class="spacer-box"></div>  
+  <div class="container has-text-centered">
+        <div class="box">
             <div class="content">
-                <h1 class="title is-3">CS6460 Project: Foreign Language Conversation Chatbot</h1>
-                <h1 class="title is-6">Created by Owen Sizemore</h1>
+                <div class="columns">
+                  <div class="column is-2"></div>
+                  <div class="column is-8">
+                    <h1 class="title is-2">PolyTalk: A Multimodal Conversation Interface for Personalized Foreign Language Learning</h1>
+                  </div>
+                  <div class="column is-3"></div>
+                </div>
+                <h1 class="title is-5">Created by Owen Sizemore</h1>
                 {% if not language %}
                 <p>Choose a conversation language to get started:</p>
                 <form method="POST" action="/">
@@ -90,26 +85,41 @@
                 </div>
 
                 {% for pr in prompts_and_responses %}
-                <div class="box">
-                  {{ pr[0] }}
-                </div>
-                <div class="box">
-                  <div class="columns is-vcentered">
-                    <div class="column is-one-quarter">
-                      <figure class="image is-48x48">
-                        <img src="{{ url_for('static', filename='tutor.png') }}">
-                      </figure>
+                  {% if pr[0].lower().endswith((".png", ".jpg", ".jpeg", ".gif")) or pr[0].startswith("data:") %}
+                    <div class="box">
+                      <p>Let's talk about this image:</p>
+                      <div class="columns">
+                        <div class="column is-4"></div>
+                        <div class="column is-4">
+                          <figure class="image is-4by3 mb-4">
+                            <img src="{{ pr[0] }}">
+                          </figure>
+                        </div>
+                        <div class="column is-4"></div>
+                      </div>
                     </div>
-                    <div class="column is-half has-text-centered">
-                      <p class="text-to-dictate" data-prompt="{{ pr[1] }}">{{ pr[1] }}</p>
+                  {% else %}
+                    <div class="box">
+                      <p><em>(You)</em>{{ pr[0] }}</p>
                     </div>
-                    <div class="column is-one-quarter">
-                      <figure class="dictate image is-48x48">
-                        <img src="{{ url_for('static', filename='speaker.png') }}">
-                      </figure>
+                  {% endif %}
+                  <div class="box">
+                    <div class="columns is-vcentered">
+                      <div class="column is-one-quarter">
+                        <figure class="image is-48x48">
+                          <img src="{{ url_for('static', filename='tutor.png') }}">
+                        </figure>
+                      </div>
+                      <div class="column is-half has-text-centered">
+                        <p class="text-to-dictate" data-prompt="{{ pr[1] }}">{{ pr[1] }}</p>
+                      </div>
+                      <div class="column is-one-quarter">
+                        <figure class="dictate image is-48x48">
+                          <img src="{{ url_for('static', filename='speaker.png') }}">
+                        </figure>
+                      </div>
                     </div>
                   </div>
-                </div>
                 {% endfor %}
 
                 <div class="buttons">
@@ -134,6 +144,7 @@
                 </div>
 
                 <div id="text-div" class="box animated-box" style="display: none">
+                  <p>In {{ language }}, type a response to the tutor's message in the box below.</p>
                   <div class="buttons are-small">
                     {% for accent in accents %}
                       <button class="button is-info is-outlined" onclick="appendAccent('{{ accent }}')">{{ accent }}</button>
@@ -154,7 +165,7 @@
                 </div>
 
                 <div id="audio-div" class="box animated-box" style="display: none">
-                  <p>Record audio from your browser, then download the recording</p>
+                  <p>Record yourself speaking in {{ language }} from your browser, then download the recording.</p>
                   <div class="buttons is-centered">
                     <button id="recordButton" class="button is-info" onclick="toggleRecording()">
                       <span id="recordIcon" class="icon is-small">
@@ -169,7 +180,7 @@
                       </span>
                     </button>
                   </div>
-                  <p class="mt-5">Upload Audio Here</p>
+                  <p class="mt-5">Upload Audio File Here</p>
                   <p>Supported audio formats: m4a, mp3, webm, mp4, mpga, wav, mpeg, ogg, oga, flac</p>
                   <div class="columns">
                     <div class="column is-3"></div>
@@ -186,7 +197,7 @@
                                 Choose a file…
                               </span>
                             </span>
-                            <span class="file-name">
+                            <span id="audio-file-name" class="file-name">
                               No file uploaded
                             </span>
                           </label>
@@ -199,25 +210,34 @@
                 </div>
 
                 <div id="image-div" class="box animated-box" style="display: none">
-                  <p>Placeholder image</p>
-                </div>
-                
-                <div class="buttons">
-                  <div class="file">
-                    <label class="file-label">
-                      <input class="file-input" type="file" name="image" id="image-input">
-                      <span class="file-cta">
-                        <span class="file-icon">
-                          <i class="fas fa-upload"></i>
-                        </span>
-                        <span class="file-label">
-                          Upload Image
-                        </span>
-                      </span>
-                    </label>
+                  <p>Upload an image to discuss its contents with the tutor.</p>
+                  <p><em>Note: it may take up to 60 seconds for the image to process - only press the Submit button once.</em></p>
+                  <p>Supported image formats: png, jpg, jpeg, gif</p>
+                  <div class="columns">
+                    <div class="column is-3"></div>
+                    <div class="column is-6">
+                      <form id="audio-form" method="POST" action="/process-image" enctype="multipart/form-data">
+                        <div class="file has-name is-boxed is-fullwidth is-centered">
+                          <label class="file-label">
+                            <input class="file-input" type="file" name="image" id="image-input">
+                            <span class="file-cta">
+                              <span class="file-icon">
+                                <i class="fas fa-upload"></i>
+                              </span>
+                              <span class="file-label">
+                                Choose a file…
+                              </span>
+                            </span>
+                            <span id="image-file-name" class="file-name">
+                              No file uploaded
+                            </span>
+                          </label>
+                        </div>
+                        <button id="uploadImageSubmitButton" class="button is-info is-outlined is-centered is-fullwidth mt-3" disabled>Submit</button>
+                      </form>
+                    </div>
+                    <div class="column is-3"></div>
                   </div>
-                  <button id="process-image" class="button is-primary">Submit Image</button>
-                  <button class="button" onclick="startAstica()">Astica API demo</button>
                 </div>
 
                 {% endif %} <!-- endif initial_prompt -->
@@ -225,6 +245,7 @@
             </div>
         </div>
     </div>
+    <div class="spacer-box"></div> 
     <script>
       function appendAccent(accent) {
             const inputBox = document.getElementById('text-input');
@@ -237,7 +258,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         const audioInput = document.getElementById("audio-input");
         const submitButton = document.getElementById("uploadSubmitButton");
-        const fileNameSpan = document.querySelector(".file-name");
+        const fileNameSpan = document.getElementById("audio-file-name");
 
         audioInput.addEventListener("change", () => {
           if (audioInput.files.length > 0) {
@@ -247,6 +268,21 @@
           } else {
             submitButton.disabled = true;
             fileNameSpan.textContent = "No file uploaded";
+          }
+        });
+
+        const imageInput = document.getElementById("image-input");
+        const submitImageButton = document.getElementById("uploadImageSubmitButton");
+        const imageFileNameSpan = document.getElementById("image-file-name");
+
+        imageInput.addEventListener("change", () => {
+          if (imageInput.files.length > 0) {
+            submitImageButton.disabled = false;
+            const imageFileName = imageInput.files[0].name;
+            imageFileNameSpan.textContent = imageFileName;
+          } else {
+            submitImageButton.disabled = true;
+            imageFileNameSpan.textContent = "No file uploaded";
           }
         });
       });
