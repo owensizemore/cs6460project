@@ -295,7 +295,8 @@ def get_language_code(language):
         'japanese': 'ja-JP',
         'chinese': 'zh-CN',
         'vietnamese': 'vi-VN',
-        'korean': 'ko-KR'
+        'korean': 'ko-KR',
+        'serbian': 'sr-RS'
     }
     language = language.lower()
     return codes[language]
