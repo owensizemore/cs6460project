@@ -14,7 +14,19 @@ The following instructions will serve as a guide for accessing and running the p
 9. Save the `.env` file and use the command `flask run` to begin the Flask application. Note that if the error message “Error: While importing 'app', an ImportError was raised.” appears in your console, check the `app.py` file for any libraries that were not properly installed and install them with the command `pip install [LIBRARY_NAME]`.
 10. Navigate to `127.0.0.1:5000/` or `localhost:5000/` in your browser to open the Flask application.
 
+### Common Issues
+
+**OpenAI API**
+
 If you experience error messages involving the openai library while interacting with the Flask application, complete the following steps:
 1. Uninstall the openai package with the command `pip uninstall openai`.
 2. Upgrade your pip installation with the command `pip install --upgrade pip`.
 3. Reinstall the openai package with the command `pip install openai`.
+
+**Google Cloud Text-to-Speech**
+
+If you experience error messages involving the `google.cloud.texttospeech` module, try manually installing this module with `pip install google.cloud.texttospeech` and/or `pip install google-cloud-texttospeech`.
+
+**Astica API**
+
+If you have created an [Astica](https://astica.org) account and are in the process of requesting an API key, select the option to re-send the confirmation email required to authenticate your account. I have experienced issues in the past where the original confirmation email never sent.
