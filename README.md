@@ -1,6 +1,6 @@
 ### CS6460 Project: Developing a Multimodal Conversation Interface for Personalized Foreign Language Learning using Large Language Models
 
-Created by [Owen Sizemore](mailto:psizemore3@gatech.edu)
+Created by [Owen Sizemore](https://www.linkedin.com/in/owensizemore/)
 
 The following instructions will serve as a guide for accessing and running the project on a local computer.
 1. Ensure that Python is installed on your local computer.
